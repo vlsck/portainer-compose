@@ -1,0 +1,62 @@
+version: "3.9"
+
+services:
+  nginx-proxy:
+    image: nginx:1.22.0
+    container_name: reverse-proxy
+    depends_on:
+      - frontend
+      - backend
+    restart: on-failure
+    ports:
+      - 80:80
+    volumes:
+      - type: bind
+        source: ./config/nginx.conf
+        target: /etc/nginx/conf.d/default.conf
+    networks:
+      - brt-network
+
+  frontend:
+    image: hub.logicspark.com/brt-contract/brt-contract-web-prod:134-slim
+    container_name: brt-contract-frontend
+    expose:
+      - 80
+    depends_on:
+      - backend
+    restart: on-failure
+    networks:
+      - brt-network
+
+
+  backend:
+    image: hub.logicspark.com/brt-contract/brt-contract-api-stg:19
+    container_name: brt-contract-backend
+    env_file:
+      - ./config/.env
+    expose:
+      - 8081
+    restart: on-failure
+    volumes:
+      - type: bind
+        source: ./data/brt-contract-data/public/uploads/online-compensate
+        target: /usr/src/app/public/uploads/online-compensate
+      - type: bind
+        source: ./data/brt-contract-data/public/uploads/commission-pick-pack-fee
+        target: /usr/src/app/public/uploads/commission-pick-pack-fee
+      - type: bind
+        source: ./data/brt-contract-data/public/uploads/contract
+        target: /usr/src/app/public/uploads/contract
+      - type: bind
+        source: ./data/brt-contract-data/public/uploads/trade-term
+        target: /usr/src/app/public/uploads/trade-term
+      - type: bind
+        source: ./data/brt-contract-data/public/uploads/property-contract
+        target: /usr/src/app/public/uploads/property-contract
+    networks:
+      - brt-network
+
+networks:
+  brt-network:
+    external: true
+    # mem_limit: 2048MB
